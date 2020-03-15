@@ -4,6 +4,7 @@
  
  ## 使用方式
  
+ - 用 IDEA 导入项目；
  - 执行`WereadNoteToolApplication.java`，启动项目；
  - 浏览器访问：`http://localhost:9370/`
  - 将微信读书笔记粘贴进文本框，点击提交，然后会下载转换好的 markdown 文件；
