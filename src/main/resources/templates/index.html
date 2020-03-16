@@ -16,10 +16,10 @@
 
 <form class="layui-form">
     <div class="layui-form-item layui-form-text">
-        <label class="layui-form-label">普通文本域</label>
+        <label class="layui-form-label">读书笔记</label>
         <div class="layui-input-block">
-            <textarea placeholder="请输入微信读书笔记" class="layui-textarea" style="height:300px;width:900px"
-                      id="wereadNote" name="wereadNote"></textarea>
+            <textarea placeholder="请粘贴你在微信读书中复制的笔记(*^__^*)" class="layui-textarea" style="height:300px;width:900px"
+                      id="wereadNoteText" name="wereadNoteText"></textarea>
         </div>
     </div>
     <div class="layui-form-item">
@@ -34,12 +34,42 @@
 <script src="/layui.js" charset="utf-8"></script>
 <script>
     layui.use(['form', 'layer'], function () {
-        var form = layui.form;
+        const form = layui.form;
+        const layer = layui.layer;
         form.on('submit(wxButton)', function (data) {
-            document.write("<form action=/weread/convertMarkdown method=post name=wxNoteForm style='display:none'>");
-            document.write("<input type=hidden name=wereadNote value='" + data.field.wereadNote + "'/>");
-            document.write("</form>");
-            document.wxNoteForm.submit();
+
+            const note = data.field.wereadNoteText;
+            if (typeof note == "undefined" || note == null || note === "") {
+                layer.msg('笔记不能为空哦！', {icon: 5});
+                return false;
+            }
+
+            // 定义一个form表单,通过form表单来发送请求
+            const form = $("<form>");
+            // 设置表单状态为不显示
+            form.attr("style", "display:none");
+            // method属性设置请求类型为post
+            form.attr("method", "post");
+            // action属性设置请求路径,
+            // 请求类型是post时,路径后面跟参数的方式不可用
+            // 可以通过表单中的input来传递参数
+            form.attr("action", "/weread/convertMarkdown");
+            $("body").append(form);
+            // 在表单中添加input标签来传递参数
+            // 如有多个参数可添加多个input标签
+            const input1 = $("<input>");
+            // 设置为隐藏域
+            input1.attr("type", "hidden");
+            // 设置参数名称
+            input1.attr("name", "wereadNote");
+            // 设置参数值
+            input1.attr("value", note);
+            // 添加到表单中
+            form.append(input1);
+            // 表单提交
+            form.submit();
+            // 阻止表单跳转
+            return false;
         });
     });
 </script>
