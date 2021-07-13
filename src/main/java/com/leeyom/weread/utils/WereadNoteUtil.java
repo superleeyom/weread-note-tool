@@ -106,8 +106,8 @@ public class WereadNoteUtil {
         // 清空response
         response.reset();
         // 设置response的Header
-        String fileName = URLEncoder.encode(file.getName(), "UTF-8");
-        response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
+        response.addHeader("Content-Disposition", "attachment;filename=" 
+                + new String(file.getName().getBytes("gbk"), "iso8859-1"));
         response.addHeader("Content-Length", "" + file.length());
         OutputStream toClient = new BufferedOutputStream(response.getOutputStream());
         response.setContentType("application/octet-stream");
