@@ -57,7 +57,14 @@
             // action属性设置请求路径,
             // 请求类型是post时,路径后面跟参数的方式不可用
             // 可以通过表单中的input来传递参数
-            form.attr("action", "/weread/convertMarkdown");
+            const {protocol, host} = window.location
+            let url = "";
+            if (host === 'weread.leeyom.top') {
+                url = protocol + '//' + host + '/wx/weread/convertMarkdown';
+            }else {
+                url = protocol + '//' + host + '/weread/convertMarkdown';
+            }
+            form.attr("action", url);
             $("body").append(form);
             // 在表单中添加input标签来传递参数
             // 如有多个参数可添加多个input标签
