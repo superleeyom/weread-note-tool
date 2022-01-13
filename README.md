@@ -12,8 +12,8 @@
  
 ## 本地开发
 
-- 用 IDEA 导入项目；
-- 执行`WereadNoteToolApplication.java`，启动项目；
+- 用 IDEA 导入项目
+- 执行`WereadNoteToolApplication.java`，启动项目
 - 浏览器访问：`http://localhost:9370/`
  
 ## 组件
