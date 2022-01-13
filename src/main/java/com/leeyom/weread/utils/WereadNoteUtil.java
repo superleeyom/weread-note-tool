@@ -1,13 +1,18 @@
 package com.leeyom.weread.utils;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 /**
  * 微信读书笔记转换工具
@@ -59,13 +64,19 @@ public class WereadNoteUtil {
 
         // 书籍信息
         String[] bookInfoArray = chapterArray[0].split(BR_TAG);
-        String bookName = StringUtils.isNotBlank(bookInfoArray[0]) ? bookInfoArray[0] : "无";
-        String author = StringUtils.isNotBlank(bookInfoArray[1]) ? bookInfoArray[1] : "无";
-        String noteNum = StringUtils.isNotBlank(bookInfoArray[2]) ? bookInfoArray[2] : "0";
+        String bookName = StrUtil.isNotBlank(bookInfoArray[0]) ? bookInfoArray[0] : "无";
+        String author = StrUtil.isNotBlank(bookInfoArray[1]) ? bookInfoArray[1] : "无";
+        String noteNum = StrUtil.isNotBlank(bookInfoArray[2]) ? bookInfoArray[2] : "0";
         String noteDate = DATE_FORMATTER.format(LocalDateTime.now());
+        String cover = getBookCover(bookName);
 
-        markdown.append("## ").append(bookName).append(BR_TAG).append(BR_TAG);
-        markdown.append("> ").append("作者：").append(author).append("；数量：").append(noteNum).append("；时间：").append(noteDate).append(BR_TAG).append(BR_TAG);
+        markdown.append("> ");
+        if (StrUtil.isNotBlank(cover)) {
+            markdown.append(cover).append(BR_TAG);
+        }
+        markdown.append("作者：").append(author).append(BR_TAG)
+                .append("时间：").append(noteDate).append(BR_TAG)
+                .append("数量：").append(noteNum).append(BR_TAG).append(BR_TAG);
 
         // 读取每章节下面的笔记条目
         for (int i = 1; i < chapterArray.length; i++) {
@@ -79,12 +90,13 @@ public class WereadNoteUtil {
             for (int j = 1; j < noteArray.length; j++) {
                 String[] noteItemArray = noteArray[j].split(BR_TAG);
                 for (String noteItem : noteItemArray) {
-                    if (StringUtils.isEmpty(noteItem)) {
+                    if (StrUtil.isBlank(noteItem)) {
                         continue;
                     }
-                    markdown.append(TAB_TAG).append("- ").append(noteItem.trim()).append(BR_TAG);
+                    markdown.append(TAB_TAG).append("- ").append(noteItem).append(BR_TAG);
                 }
             }
+            markdown.append(BR_TAG);
         }
 
         try {
@@ -97,6 +109,33 @@ public class WereadNoteUtil {
         }
     }
 
+    /**
+     * 匹配书籍封面，利用微信读书暴露的公共API
+     *
+     * @param bookName 书籍名字
+     * @return 封面url
+     */
+    private static String getBookCover(String bookName) {
+        String requestUrl = "https://weread.qq.com/web/search/global?keyword=" + bookName + "&maxIdx=0&fragmentSize=120&count=20";
+        String dataJson = HttpUtil.get(requestUrl);
+        JSONObject data = JSONUtil.parseObj(dataJson);
+        JSONArray books = data.getJSONArray("books");
+        String cover = null;
+        if (books != null && books.size() > 0) {
+            for (Object b : books) {
+                Map<String, Object> book = BeanUtil.beanToMap(b);
+                Map<String, Object> bookInfo = BeanUtil.beanToMap(book.get("bookInfo"));
+                if (bookName.equals(bookInfo.get("title"))) {
+                    cover = (String) bookInfo.get("cover");
+                    cover = "![" + bookName + "](" + cover + ")";
+                    break;
+                }
+            }
+            return cover;
+        }
+        return null;
+    }
+
     private static void download(HttpServletResponse response, File file) throws IOException {
         // 以流的形式下载文件
         InputStream fis = new BufferedInputStream(new FileInputStream(file));
@@ -106,7 +145,7 @@ public class WereadNoteUtil {
         // 清空response
         response.reset();
         // 设置response的Header
-        response.addHeader("Content-Disposition", "attachment;filename=" 
+        response.addHeader("Content-Disposition", "attachment;filename="
                 + new String(file.getName().getBytes("gbk"), "iso8859-1"));
         response.addHeader("Content-Length", "" + file.length());
         OutputStream toClient = new BufferedOutputStream(response.getOutputStream());
@@ -119,7 +158,7 @@ public class WereadNoteUtil {
     }
 
     private static File createMd(StringBuilder markdown, String bookName) throws IOException {
-        String fileName = bookName + ".md";
+        String fileName = "[笔记]" + bookName + ".md";
         File file = new File(fileName);
         if (!file.exists()) {
             file.createNewFile();
